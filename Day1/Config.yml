@@ -1,0 +1,318 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Template Lks
+
+Resources:
+# NETWORKING
+  VPC: 
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 175.20.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: Telkom-VPC
+
+
+  # Subnets  
+  Pub1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 175.20.1.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public1
+  
+  Pub2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 175.20.2.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public2
+
+  Priv1a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 175.20.3.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Priv1a
+  
+  Priv1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 175.20.4.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Priv1b
+  
+  Priv2a:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1a
+      CidrBlock: 175.20.5.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Priv2a
+  
+  Priv2b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: us-east-1b
+      CidrBlock: 175.20.6.0/24
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Priv2b
+  
+  # EIPs
+  eip1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Tags:
+        - Key: Name 
+          Value: eip1
+  
+  eip2:
+    Type: AWS::EC2::EIP
+    Properties:
+      Tags:
+        - Key: Name 
+          Value: eip2
+
+  # GATEWAYs   
+  igw:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: 
+        - Key: Name
+          Value: igw-public
+     
+  ngw1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt eip1.AllocationId
+      SubnetId: !Ref Pub1
+      ConnectivityType: public
+      Tags:
+        - Key: Name
+          Value: ngw-useast-1a
+
+  ngw2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt eip2.AllocationId
+      SubnetId: !Ref Pub2
+      ConnectivityType: public
+      Tags:
+        - Key: Name
+          Value: ngw-useast-1b
+
+  # RTBs
+  pub1aRTB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public-Route-1a
+
+  pub1bRTB:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Public-Route-1b
+
+  privRTB1a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-Route-1a
+  
+  privRTB1b:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-Route-1b
+  
+  privRTB2a:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-Route-2a
+  
+  privRTB2b:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Private-Route-2b
+
+  igwAtt:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref igw
+      VpcId: !Ref VPC
+
+  # Routes
+  pubRoute1a:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igw
+      RouteTableId: !Ref pub1aRTB
+
+  pubRoute1b:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igw
+      RouteTableId: !Ref pub1bRTB
+
+  priv1aRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref ngw1
+      RouteTableId: !Ref privRTB1a
+  
+  priv1bRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref ngw2
+      RouteTableId: !Ref privRTB1b
+  
+  priv2aRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref ngw1
+      RouteTableId: !Ref privRTB2a
+
+  priv2bRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref ngw2
+      RouteTableId: !Ref privRTB2b
+  
+  # associations
+  pub1RouteASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref pub1aRTB
+      SubnetId: !Ref Pub1
+  
+  pub2RouteASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref pub1bRTB
+      SubnetId: !Ref Pub2
+  
+  priv1aRouteASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref privRTB1a
+      SubnetId: !Ref Priv1a
+  
+  priv1bRouteASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref privRTB1b
+      SubnetId: !Ref Priv1b
+  
+  priv2aRouteASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref privRTB2a
+      SubnetId: !Ref Priv2a
+  
+  priv2bRouteASS:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref privRTB2b
+      SubnetId: !Ref Priv2b
+
+  # SGs
+  bastionSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: Bastion
+      GroupDescription: allow SSH port
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: SG-Bastion
+  
+  productapiSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: product-api
+      GroupDescription: allow HTTP and HTTPS access
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+        - CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+          IpProtocol: tcp
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: SG-Product-api
+
+  privateSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: private
+      GroupDescription: allow SSH port
+      SecurityGroupIngress: 
+        - SourceSecurityGroupId: !Ref bastionSG
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: SG-Private
+  
+  # endpoint
+  endpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: com.amazonaws.us-east-1.execute-api
+      PrivateDnsEnabled: true
+      VpcEndpointType: Interface
+      SecurityGroupIds:
+        - !Ref productapiSG
+      SubnetIds:
+        - !Ref Pub1
+        - !Ref Pub2

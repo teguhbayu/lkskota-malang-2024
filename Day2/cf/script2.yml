@@ -1,0 +1,258 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: App deployment CF
+
+Parameters:
+  VPC:
+    Description: vpc id
+    Type: String
+  
+  AMI:
+    Description: image id
+    Type: String
+
+  accessid:
+    Description: accessid
+    Type: String
+  
+  accesskey:
+    Description: accesskey
+    Type: String
+  
+  accesstoken:
+    Description: accesstoken
+    Type: String
+  
+  priv1a:
+    Description: priv1a
+    Type: String
+  
+  priv1b:
+    Description: priv1b
+    Type: String
+  
+  priv1c:
+    Description: priv1c
+    Type: String
+  
+  pub1a:
+    Description: pub1a
+    Type: String
+
+  pub1b:
+    Description: pub1b
+    Type: String
+  
+  pub1c:
+    Description: pub1c
+    Type: String
+
+Resources:
+  # SGs
+  LBSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allows HTTP and HTTPS requests
+      GroupName: LB
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+          IpProtocol: tcp
+        - CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
+          IpProtocol: tcp
+      Tags: 
+        - Key: Name
+          Value: SG-LB
+      VpcId: !Ref VPC
+  
+  AppsSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Opens port 3000 for the app
+      GroupName: App
+      SecurityGroupIngress: 
+        - CidrIp: 0.0.0.0/0
+          FromPort: 3000
+          ToPort: 3000
+          IpProtocol: tcp
+      Tags: 
+        - Key: Name
+          Value: SG-Apps
+      VpcId: !Ref VPC
+  
+  # SNS
+  topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        - Endpoint: teguhbayupratama@gmail.com
+          Protocol: email
+      TopicName: EC2Topic
+      
+  # EC2s
+  inst1a:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: t2.micro
+      SubnetId: !Ref priv1a
+      AvailabilityZone: us-east-1a
+      SecurityGroupIds:
+        - !Ref AppsSg
+      Tags: 
+        - Key: Name
+          Value: lksapps1a
+      UserData: 
+        Fn::Base64:
+          !Sub 
+            - |
+              #!/bin/bash
+              sudo -u ec2-user -i <<'EOF'
+              sudo yum update -y
+              curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash -
+              sudo yum install -y nodejs git npm
+              sudo npm install pm2 -g
+              aws configure set aws_access_key_id "${ai}"
+              aws configure set aws_secret_access_key "${ak}"
+              aws configure set region "us-east-1"
+              aws configure set aws_session_token "${at}"
+              git clone https://github.com/handipradana/dash.git /home/ec2-user/dash
+              cd /home/ec2-user/dash
+              npm install
+              echo 'AWS_ACCESS_KEY="${ai}"' > /home/ec2-user/dash/.env
+              echo 'AWS_SECRET_ACCESS_KEY="${ak}"' >> /home/ec2-user/dash/.env
+              echo 'AWS_SESSION_TOKEN="${at}"' >> /home/ec2-user/dash/.env
+              pm2 start /home/ec2-user/dash/apps.js
+              aws sns publish --topic-arn "${arn}" --message "Teguh Bayu Pratama - lksapps1a created"
+            - arn: !GetAtt topic.TopicArn
+              ak: !Ref accesskey
+              ai: !Ref accessid
+              at: !Ref accesstoken
+  
+  inst1b:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: t2.micro
+      SubnetId: !Ref priv1b
+      AvailabilityZone: us-east-1b
+      SecurityGroupIds:
+        - !Ref AppsSg
+      Tags: 
+        - Key: Name
+          Value: lksapps1b
+      UserData: 
+        Fn::Base64:
+          !Sub
+            - |
+              #!/bin/bash
+              sudo -u ec2-user -i <<'EOF'
+              sudo yum update -y
+              curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash -
+              sudo yum install -y nodejs git npm
+              sudo npm install pm2 -g
+              aws configure set aws_access_key_id "${ai}"
+              aws configure set aws_secret_access_key "${ak}"
+              aws configure set region "us-east-1"
+              aws configure set aws_session_token "${at}"
+              git clone https://github.com/handipradana/dash.git /home/ec2-user/dash
+              cd /home/ec2-user/dash
+              npm install
+              echo 'AWS_ACCESS_KEY="${ai}"' > /home/ec2-user/dash/.env
+              echo 'AWS_SECRET_ACCESS_KEY="${ak}"' >> /home/ec2-user/dash/.env
+              echo 'AWS_SESSION_TOKEN="${at}"' >> /home/ec2-user/dash/.env
+              pm2 start /home/ec2-user/dash/apps.js
+              aws sns publish --topic-arn "${arn}" --message "Teguh Bayu Pratama - lksapps1b created"
+            - arn: !GetAtt topic.TopicArn
+              ak: !Ref accesskey
+              ai: !Ref accessid
+              at: !Ref accesstoken
+  
+  inst1c:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: t2.micro
+      SubnetId: !Ref priv1c
+      AvailabilityZone: us-east-1c
+      SecurityGroupIds:
+        - !Ref AppsSg
+      Tags: 
+        - Key: Name
+          Value: lksapps1c
+      UserData: 
+        Fn::Base64:
+          !Sub
+            - |
+              #!/bin/bash
+              sudo -u ec2-user -i <<'EOF'
+              sudo yum update -y
+              curl -fsSL https://rpm.nodesource.com/setup_21.x | sudo bash -
+              sudo yum install -y nodejs git npm
+              sudo npm install pm2 -g
+              aws configure set aws_access_key_id "${ai}"
+              aws configure set aws_secret_access_key "${ak}"
+              aws configure set region "us-east-1"
+              aws configure set aws_session_token "${at}"
+              git clone https://github.com/handipradana/dash.git /home/ec2-user/dash
+              cd /home/ec2-user/dash
+              npm install
+              echo 'AWS_ACCESS_KEY="${ai}"' > /home/ec2-user/dash/.env
+              echo 'AWS_SECRET_ACCESS_KEY="${ak}"' >> /home/ec2-user/dash/.env
+              echo 'AWS_SESSION_TOKEN="${at}"' >> /home/ec2-user/dash/.env
+              pm2 start /home/ec2-user/dash/apps.js
+              aws sns publish --topic-arn "${arn}" --message "Teguh Bayu Pratama - lksapps1c created"
+            - arn: !GetAtt topic.TopicArn
+              ak: !Ref accesskey
+              ai: !Ref accessid
+              at: !Ref accesstoken
+
+  # Load Balancer & Target Group
+  LB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: lks-public-lb
+      Scheme: internet-facing
+      SecurityGroups:
+        - !Ref LBSg
+      Subnets:
+        - !Ref pub1a
+        - !Ref pub1b
+        - !Ref pub1c
+      Tags:
+        - Key: Name
+          Value: lks-public-lb
+  
+  TG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: instance
+      VpcId: !Ref VPC
+      IpAddressType: ipv4
+      Name: lks-public-lb-tg
+      Port: 3000
+      Protocol: HTTP
+      ProtocolVersion: HTTP1
+      Targets:
+        - Id: !Ref inst1a
+          Port: 3000
+        - Id: !Ref inst1b
+          Port: 3000
+        - Id: !Ref inst1c
+          Port: 3000
+      Tags:
+        - Key: Name
+          Value: lks-publig-lb-tg
+  
+  LBlistener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !GetAtt LB.LoadBalancerArn
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !GetAtt TG.TargetGroupArn
